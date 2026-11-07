@@ -17,11 +17,11 @@ def issue(state, item, quantity_text):
         return {"ok": False, "message": "Введите целое количество от 1 до 3"}
 
     quantity = int(text)
-    if quantity < 1 or quantity >= 3:
+    if quantity < 1 or quantity > 3:
         return {"ok": False, "message": "Введите целое количество от 1 до 3"}
 
     available = state["stock"][item]
-    if available < 1:
+    if available < quantity:
         return {"ok": False, "message": "Недостаточно оборудования"}
 
     loan = {
@@ -37,10 +37,17 @@ def issue(state, item, quantity_text):
 
 
 def return_loan(state, loan_id):
-    """Вернуть всё оборудование из одной записи выдачи."""
+    found_loan = None
     for loan in state["loans"]:
         if loan["id"] == loan_id:
-            state["stock"][loan["item"]] += loan["quantity"]
-            loan["status"] = "returned"
-            return {"ok": True, "message": "Возвращено"}
-    return {"ok": False, "message": "Выдача не найдена"}
+            found_loan = loan
+            break
+    if found_loan == None:
+        return {"ok": False, "message": "Выдача не найдена"}
+    
+    if loan["status"] == "returned":
+        return {"ok": False, "message": "Уже возвращено"}
+    
+    state["stock"][loan["item"]] += loan["quantity"]
+    loan["status"] = "returned"
+    return {"ok": True, "message": "Возвращено"}
